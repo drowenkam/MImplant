@@ -1,0 +1,24 @@
+{
+  "name": "M Imp Dent RCSEd \u2014 Study Hub",
+  "short_name": "MImpDent Study",
+  "description": "800 SBA questions and revision notes for Membership in Implant Dentistry",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f5f7f8",
+  "theme_color": "#142538",
+  "icons": [
+    {
+      "src": "./assets/icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./assets/icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ]
+}

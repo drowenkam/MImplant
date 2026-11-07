@@ -1,0 +1,32 @@
+{
+  "sourceFile": "M_Imp_Dent_RCSEd_Revision_Notebook_3.pdf",
+  "sourcePages": 951,
+  "questions": 800,
+  "answers": 800,
+  "blocks": 24,
+  "optionsPerQuestion": 5,
+  "notesSections": 16,
+  "pdfSplitPages": {
+    "01_Revision_Guide.pdf": [
+      1,
+      82
+    ],
+    "02_SBA_800_Questions.pdf": [
+      83,
+      227
+    ],
+    "03_SBA_800_Answers_Explanations.pdf": [
+      831,
+      951
+    ],
+    "04_OSCE_58_Stations.pdf": [
+      228,
+      422
+    ],
+    "05_SOE_51_Cases.pdf": [
+      423,
+      830
+    ]
+  },
+  "author": "Dr. Kam O Man, Owen"
+}
