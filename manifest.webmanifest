@@ -1,12 +1,12 @@
 {
-  "name": "M Imp Dent RCSEd \u2014 Study Hub",
-  "short_name": "MImpDent Study",
+  "name": "Membership in Implant Dentistry \u2014 RCSEd Study Portal",
+  "short_name": "MImpDent RCSEd",
   "description": "800 SBA questions and revision notes for Membership in Implant Dentistry",
-  "start_url": "./index.html",
+  "start_url": "./index.html#home",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#f5f7f8",
-  "theme_color": "#142538",
+  "background_color": "#f4f7f9",
+  "theme_color": "#132d43",
   "icons": [
     {
       "src": "./assets/icon-192.png",

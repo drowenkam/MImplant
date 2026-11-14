@@ -1,85 +1,50 @@
-# M Imp Dent RCSEd — Offline Revision & 800 SBA Study Hub
+# M Imp Dent RCSEd — FPros-style study portal · v3
 
-Prepared from the provided **M_Imp_Dent_RCSEd_Revision_Notebook_3.pdf**. Original revision notebook by **Dr. Kam O Man, Owen**.
+**Complete replacement website.** Based on the visual hierarchy and navigation of the author's existing DSFE-FPros GitHub Pages site, while using **only** the uploaded `M_Imp_Dent_RCSEd_Revision_Notebook_3.pdf` for implant dentistry study content.
 
-**Important:** Independent revision aid; it is not an official publication of, nor endorsed by, the Royal College of Surgeons of Edinburgh.
+## Contents
 
-## What is inside?
+- `index.html` — unified Home / Dashboard / Revision / 800 SBAs / 58 OSCE / 51 SOE / Resources portal.
+- `quiz.html` and `revision.html` — backwards-compatible redirects to the appropriate sections of `index.html`.
+- `data/questions.js` — all 800 original SBAs, A–E choices, answer keys and explanations.
+- `data/revision.js` — searchable text of **all 82 guide pages** (with 17 chapter/intro sections).
+- `data/cases.js` — the full extracted text of 58 OSCE stations and 51 SOE cases; source PDFs retain diagrams and original formatting.
+- `assets/page-00.js` through `assets/page-06.js` — images of **all 82 original revision pages**, grouped to keep the GitHub file count manageable.
+- `pdf/` — the same **951 source pages** in five separate PDFs, with original layout and case illustrations.
+- `sw.js` — service worker, supporting core offline study and optional PDF downloads.
+- `healthcheck.html` — page for checking files after publishing.
+- `qa_results.json` and `QA_REPORT.md` — file/data/scoring QA results and limitations.
 
-- `index.html` — home page; start here.
-- `revision.html` — searchable HTML revision library (examination guidance, 12 core topics, numbers/classifications, literature).
-- `quiz.html` — 800 interactive SBAs, each with five original options, key, explanation, 24 topic blocks, bookmarking, study progress, timed sessions, and import/export of progress.
-- `pdf/01_Revision_Guide.pdf` — original formatted revision guide including cover and author (82 pages).
-- `pdf/02_SBA_800_Questions.pdf` — questions only (145 pages).
-- `pdf/03_SBA_800_Answers_Explanations.pdf` — answers and teaching explanations (121 pages).
-- `pdf/04_OSCE_58_Stations.pdf` — 58 OSCE stations (195 pages).
-- `pdf/05_SOE_51_Cases.pdf` — 51 structured oral cases (408 pages).
-- `data/` — structured JSON plus script-ready copies of the exact source questions/notes.
-- `sw.js`, `manifest.webmanifest` — offline support and Home Screen installation.
-- `qa_manifest.json` — extraction counts and original page ranges.
-- `QA_REPORT.md` — checked workflows, data integrity and known device limitations.
+## Update an existing GitHub Pages website (recommended)
 
-**No external code, CDN, fonts, login or network API is needed.** PDF supplements preserve the original layout and figures; the revision reader provides a mobile-reflowed transcription. When numbers or tables matter, use the formatted PDF.
+1. **First, export your existing SBA progress** from the old site's SBA screen, keeping the JSON safe.
+2. On your computer, open your local cloned GitHub Pages repository with GitHub Desktop.
+3. Back up the repository folder. Remove the **old website files**, but **do not delete `.git`, `.github`, or `CNAME`** if present. Do not delete the repository itself.
+4. **Extract this ZIP**, then copy **all its contents directly to the repository root**. `index.html`, `site.css`, `portal.js`, `sw.js`, `data/`, `assets/`, and `pdf/` must be directly beside one another. **Do not add an extra nested folder.**
+5. Commit the changes and **Push origin**.
+6. In GitHub, **Settings → Pages**, verify publishing is from `main` and `/(root)` if you use branch deployment.
+7. When deployment completes, open `https://YOUR-USERNAME.github.io/YOUR-REPOSITORY/healthcheck.html`. All checks should report success. Then open the website `index.html#home` in a private window to check the latest layout.
 
-## Publish to GitHub Pages
+**GitHub web upload:** Upload the extracted *files*, not the ZIP file. Files in this package are far below GitHub's 25 MB individual browser-upload limit. The reference page images are in seven manageable JS files rather than 82 separate images.
 
-1. Create a new GitHub repository (for example `mimpdent-rcsed-study`).
-2. Extract this ZIP on your computer. Upload **all files and subfolders inside** `M_Imp_Dent_RCSEd_GitHub_Offline_DEBUGGED_v2/` to the root of the repository — keep the folder structure.
-3. Commit the files to the `main` branch.
-4. In the GitHub repository open **Settings → Pages**. Under **Build and deployment**, choose **Deploy from a branch**. Set `main` and **`/(root)`**, and save.
-5. Open the GitHub Pages URL displayed in repository Settings. It will generally look like `https://USERNAME.github.io/REPOSITORY/`.
-6. Open `index.html`, `revision.html` or `quiz.html` in Safari. Links work using relative paths in any GitHub Pages repository name.
+## iPhone and iPad offline use
 
-### Offline on iPhone and iPad
+1. Open the new GitHub Pages address in **Safari** while connected to Wi-Fi.
+2. Use **Share → Add to Home Screen** and open the installed icon while online once. Check the Resources tab for **Offline essentials**. SBA questions, searchable note text, and case readers are core files cached automatically by the service worker.
+3. For the **formatted page images**, visit **Resources → Save all original notebook pages offline** (7 groups). Optional PDFs may be cached separately using **Save 5 PDFs offline** (storage permitting).
+4. To verify on a particular iPhone or iPad, enable **Airplane Mode** and then test Home, Revision, SBA, OSCE, and SOE navigation. Physical Safari/Airplane Mode behaviour must be tested on the device; desktop or simulated tests do not guarantee it.
+5. SBA progress is saved **in local browser storage**. It does **not** sync automatically between iPhone and iPad. Use **Export progress** and **Import progress** in the SBA view to transfer.
 
-1. **Connect to Wi-Fi** and open the GitHub Pages URL in **Safari**.
-2. Tap the **Share** button → **Add to Home Screen** → **Add**.
-3. Launch the new Home Screen icon **once while online** and let the website complete its initial load. The offline worker first saves the core HTML pages, SBA question data, notes and required scripts. It then attempts to save the five PDF supplements separately (roughly 18 MB more). The home screen displays the exact count of PDFs saved, and you can press **Save PDFs offline / retry**. If iOS storage blocks a large PDF, the quiz and notes can still work offline.
-4. You can then put the device in Airplane Mode and use the Home Screen app offline. The local app keeps your SBA progress on that device.
+## SBA scoring and workflow
 
-**Important limitations:** Installing a PWA and caching through a service worker requires an HTTPS website, such as GitHub Pages. Simply opening `index.html` through iOS Files does not install its service worker. A downloaded folder works as local HTML on a laptop; for iPhone/iPad, use GitHub Pages + Add to Home Screen. iOS may evict website caches after storage pressure or prolonged non-use; revisit once online to restore. Do not delete the Home Screen app or clear website data unless your progress is backed up.
+- Distinguishes **completed unique questions out of 800**, **first-attempt accuracy**, and **latest-answer accuracy** after retries.
+- Supports the original 24 question blocks, **multiple blocks at once**, new/incorrect/bookmarked questions, shuffled selection and 10/20/40/80/90 question sets.
+- **Study mode** checks one selected answer at a time and reveals its source explanation. Unchecked questions count as zero toward a finished session's total score.
+- **Timed practice** allows 80 seconds per assigned question, with pause-and-resume through Save and exit.
+- **Exam simulation** selects 90 questions for 120 minutes and hides correct answers/explanations until submitted. Blank questions count as incorrect. The timer can be paused if the session is saved and exited, so it is a practice simulation rather than a proctored examination.
+- The earlier version's localStorage key (`mimpdent-study-progress-v1`) is retained to preserve existing progress under the same browser origin. Export as backup before any replacement.
+- In the case readers, "Mark as studied" records **completion only**, not an independently graded OSCE/SOE result.
 
-### Export and import progress
+## Source and clinical limitations
 
-The quiz keeps uniquely checked questions, first and latest graded answers, retry counts, bookmarks and a saved practice session in the browser's local storage. It **does not sync between iPhone and iPad**. Use **Export progress** on one device and **Import progress** on the other to move progress, or to keep a backup. Import **replaces** progress on the receiving device, rather than merging it; it also restores any exported unfinished session. Backups from the previous version are accepted, although they cannot reconstruct old repeat-attempt counts.
-
-### Offline without hosting
-
-On a laptop/computer, extract the ZIP and open `index.html`. Because the structured content is loaded as local `.js` files rather than fetched from the internet, the HTML notes and interactive quiz work without a server. PDFs can be opened locally. For iPhone/iPad use the installation procedure above.
-
-**Source consistency note:** The source PDF has an older introductory line describing 300 SBAs and 40 OSCE/SOE stations. Its cover, contents, and actual question/case sections establish the updated totals of **800 SBAs, 58 OSCEs and 51 structured oral cases**. The original PDF text is left unchanged.
-
-## Content validation
-
-The extraction process verified **800 unique question numbers (1–800)**, **five A–E options per question**, **800 matching explanation records**, **24 blueprint blocks** and **16 indexed revision sections**. Source PDF boundaries and page counts appear in `qa_manifest.json`.
-
-No new clinical claims have been inserted. The material in the study site is reproduced from the supplied PDF. Clinical advice and professional regulations may change: verify against current guidance before treating patients.
-
-## Copyright and privacy
-
-The source author retains their rights. You are responsible for having permission to publish the provided material in a public GitHub repository. For personal use or limited distribution, consider a private repository and a separate private hosting arrangement (standard GitHub Pages sites may be publicly accessible). No personal study history leaves the browser; progress export produces a JSON file on your device.
-
-## Audited release: scoring and navigation fixes (7 November 2026)
-
-This release corrects question-progress accounting and removes several potential dead ends.
-
-- **Unique completed count (out of 800):** only questions you explicitly **check** with an A–E choice count as answered.
-- **Latest accuracy:** correctness of the most recent graded answer for each uniquely checked question.
-- **First-attempt accuracy:** correctness of the first recorded graded answer for each uniquely checked question, retained across retries.
-- **Session score:** number correct divided by **all questions assigned**, so skipped or unchecked questions count as zero on that session's score. **Checked-only accuracy** is shown separately.
-- **Progress by topic:** expand **Progress by topic (24 blocks)** to see checked and remaining counts in each blueprint block.
-- **Navigation:** jump directly to any question in the current session, or tap **Next unchecked**. The last question offers **Finish & score**. Finishing with unchecked questions requires confirmation; the results screen offers separate retry/complete actions.
-- **Recovery:** Save and exit keeps ungraded selections and question position. Timed practice pauses on this action, then resumes from the remaining time. A saved session is never silently replaced by opening a browser item.
-- **Backup:** Export now includes graded history, bookmarks, most recent results, and an unfinished session. Old progress files from the previous version remain importable. Import still **replaces** rather than merges progress.
-- **Offline:** the app caches the essential HTML notes and SBA player first; optional large PDFs cache separately. The homepage states precisely **0–5 PDFs saved**, with an explicit retry action. The worker handles offline PDF byte ranges.
-- **Revision reader:** when a term is not found in the selected topic, the page now offers Clear search and links to matching topics.
-
-See `QA_REPORT.md` for reproducible checks, scoring definitions and limitations.
-
-### Updating an existing GitHub Pages repository
-
-1. From your current version, **export a progress JSON backup** first, if you have completed practice questions.
-2. Extract the new ZIP and replace the previous repository files and folders **with the contents of this new package**; commit to the same branch used by GitHub Pages. Preserve the folder structure; do not upload just the ZIP itself.
-3. In Safari, reopen your existing Pages URL while online and reload again after the updated service worker activates. A brief period of old cached content while the new version installs is normal.
-4. Your saved progress is designed to remain intact because the browser storage key and question IDs have not changed. Verify the counts; if needed, use **Import progress** to restore your backup. Do not clear Safari site data or delete the Home Screen app just to update it.
-5. Wait for the Home page to report **Offline SBA + notes ready**; if you want all five PDF supplements offline, keep Wi-Fi connected until the separate PDF counter reaches **5 of 5**, then test in Airplane Mode.
+The source is the candidate's supplied revision notebook. The material is an independent revision aid, not an official RCSEd publication. Content was **not clinically revalidated** against external guidelines in this rebuild. Refer to the formatted source PDFs for complex tables/figures. The DSFE-FPros link was used for **layout, UI navigation and practice workflow inspiration only**, not to substitute Fellowship prosthodontic material into the implant-dentistry question bank.

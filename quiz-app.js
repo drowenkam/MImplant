@@ -64,7 +64,7 @@
       index: Number.isInteger(raw.index) ? Math.max(0, Math.min(ids.length - 1, raw.index)) : 0,
       answers,
       label: typeof raw.label === 'string' ? raw.label.slice(0, 100) : 'Saved practice',
-      timed,
+      timed, exam: Boolean(raw.exam),
       created: Number.isFinite(raw.created) ? raw.created : Date.now(),
       paused,
       remainingMs: timed ? remainingMs : null,
@@ -112,6 +112,7 @@
       // Safari private browsing and restricted storage can throw on write.
     } catch (error) { storageWorks = false; }
     showStorageWarning();
+    window.dispatchEvent(new Event('implant-progress-updated'));
   }
   function record(id) { return store.records[String(id)] || {}; }
   function isAnswered(id) { const r = record(id); return Boolean(r.checked && isLetter(r.selected)); }
@@ -162,15 +163,34 @@
   function populate() {
     const sel = $('blockFilter'), browse = $('browseTopic');
     for (const [value, label] of [['ALL', 'All 800 questions'], ['NEW', 'Not yet checked'],
-      ['WRONG', 'Incorrect on latest attempt'], ['BOOKMARKED', 'Bookmarked questions']]) sel.add(new Option(label, value));
+      ['WRONG', 'Incorrect on latest attempt'], ['BOOKMARKED', 'Bookmarked questions'], ['MULTI','Multiple selected blocks']]) sel.add(new Option(label, value));
     for (const b of data.blocks) {
       const label = `Block ${b.letter} · Q${b.start}–${b.end}: ${b.title}`;
       sel.add(new Option(label, b.letter)); browse.add(new Option(label, b.letter));
     }
+    const grid = $('multiBlockGrid');
+    for(const b of data.blocks){
+      const lab=document.createElement('label');const input=document.createElement('input');input.type='checkbox';input.value=b.letter;input.checked=true;input.className='multi-block-input';
+      lab.append(input,document.createTextNode(`${b.letter} · ${b.title}`));grid.append(lab);
+      input.addEventListener('change', updateMulti);
+    }
+    $('multiAll').onclick=()=>{document.querySelectorAll('.multi-block-input').forEach(x=>x.checked=true);updateMulti()};
+    $('multiNone').onclick=()=>{document.querySelectorAll('.multi-block-input').forEach(x=>x.checked=false);updateMulti()};
+    sel.addEventListener('change',updateMulti);updateMulti();
     const block = new URLSearchParams(location.search).get('block');
     if (block && [...sel.options].some(x => x.value === block)) sel.value = block;
   }
+  function updateMulti(){
+    const multi=$('blockFilter').value==='MULTI';
+    $('multiBlockPanel').classList.toggle('hidden',!multi);
+    const n=document.querySelectorAll('.multi-block-input:checked').length;
+    $('multiCount').textContent=`${n} of 24 selected`;
+    const pool=poolFor($('blockFilter').value);
+    $('availablePool').textContent=`${pool.length} questions available in this selection. A session cannot contain more questions than are available.`;
+    $('startBtn').disabled=pool.length===0;
+  }
   function poolFor(filter) {
+    if(filter==='MULTI') { const selected=new Set([...document.querySelectorAll('.multi-block-input:checked')].map(x=>x.value));return questions.filter(q=>selected.has(q.block)); }
     if (filter === 'ALL') return questions;
     if (filter === 'NEW') return questions.filter(q => !isAnswered(q.id));
     if (filter === 'WRONG') return questions.filter(q => isAnswered(q.id) && record(q.id).selected !== q.answer);
@@ -184,13 +204,13 @@
     }
     return arr;
   }
-  function start(ids, label, timed) {
+  function start(ids, label, timed, exam = false) {
     if (!ids.length) {
       $('setupInfo').textContent = 'No matching questions. Try another topic, or check your completed/incorrect filters.';
       return false;
     }
     if (session && !confirm('An unfinished session is saved. Start a new session and replace it? Previously checked answers remain in overall progress.')) return false;
-    session = cleanSession({ids, index: 0, answers: {}, label, timed, created: Date.now(),
+    session = cleanSession({ids, index: 0, answers: {}, label, timed, exam, created: Date.now(),
       paused: false, remainingMs: timed ? ids.length * 80000 : null,
       deadline: timed ? Date.now() + ids.length * 80000 : null});
     save(); view('sessionView'); renderQuestion(true); return true;
@@ -199,10 +219,15 @@
     const filter = $('blockFilter').value;
     const arr = poolFor(filter).map(q => q.id);
     if ($('shuffleCheck').checked) shuffle(arr);
+    const exam = $('examCheck').checked;
+    if (exam && arr.length < 90) {
+      $('setupInfo').textContent=`Exam simulation requires 90 matching questions. Only ${arr.length} are available; broaden the topic selection.`;
+      return;
+    }
     const size = $('sizeSelect').value;
-    const n = size === 'all' ? arr.length : Math.min(Number(size), arr.length);
-    const label = ({ALL: 'All topics', NEW: 'Not yet checked', WRONG: 'Retry incorrect', BOOKMARKED: 'Bookmarked'}[filter]) || `Block ${filter}`;
-    start(arr.slice(0, n), label, $('timedCheck').checked);
+    const n = exam ? 90 : size === 'all' ? arr.length : Math.min(Number(size), arr.length);
+    const label = ({ALL: 'All topics', NEW: 'Not yet checked', WRONG: 'Retry incorrect', BOOKMARKED: 'Bookmarked', MULTI:'Selected clinical blocks'}[filter]) || `Block ${filter}`;
+    start(arr.slice(0, n), exam ? '90-question exam simulation' : label, exam || $('timedCheck').checked, exam);
   }
   function current() { return session ? byId.get(session.ids[session.index]) : null; }
   function attempt(id) {
@@ -227,7 +252,7 @@
     const sel = $('jumpSelect'); sel.innerHTML = '';
     for (let i = 0; i < session.ids.length; i++) {
       const id = session.ids[i], a = session.answers[id];
-      const state = a && a.checked ? (a.selected === byId.get(id).answer ? '✓' : '✕') : '○';
+      const state = session.exam ? (a?.selected ? '●' : '○') : a && a.checked ? (a.selected === byId.get(id).answer ? '✓' : '✕') : '○';
       sel.add(new Option(`${i + 1}. Q${id} ${state}`, String(i)));
     }
     sel.value = String(session.index);
@@ -239,8 +264,8 @@
     const a = attempt(q.id);
     $('sessionTitle').textContent = session.label;
     $('questionPosition').textContent = `Question ${session.index + 1} of ${session.ids.length}`;
-    const checked = checkedInSession();
-    $('checkedPosition').textContent = `${checked} / ${session.ids.length} checked`;
+    const checked = session.exam ? session.ids.filter(id => session.answers[id]?.selected).length : checkedInSession();
+    $('checkedPosition').textContent = `${checked} / ${session.ids.length} ${session.exam ? 'selected' : 'checked'}`;
     $('sessionProgress').style.width = `${100 * checked / session.ids.length}%`;
     displayTime();
     $('qBlock').textContent = `Block ${q.block} · ${q.topic}`;
@@ -267,24 +292,25 @@
         attemptNow.selected = letter; save(); renderQuestion(); };
       options.appendChild(button);
     }
-    $('answerPanel').classList.toggle('hidden', !a.checked);
+    $('answerPanel').classList.toggle('hidden', session.exam || !a.checked);
     $('answerTitle').textContent = a.checked ? `${a.selected === q.answer ? 'Correct ✓' : 'Incorrect ✕'} · Answer ${q.answer}: ${q.options[q.answer]}` : '';
     $('answerText').textContent = a.checked ? q.explanation : '';
     $('sourcePages').textContent = `Source: question on original PDF page ${q.question_page}; explanation on page ${q.answer_page}.`;
+    $('revealBtn').classList.toggle('hidden', Boolean(session.exam));
     $('revealBtn').textContent = a.checked ? 'Answer checked ✓' : 'Check answer & explain';
     $('revealBtn').disabled = a.checked || !a.selected;
-    $('qFeedback').textContent = a.checked ? `Marked ${a.selected === q.answer ? 'correct' : 'incorrect'} · ${checked} of ${session.ids.length} questions checked.` :
+    $('qFeedback').textContent = session.exam ? (a.selected ? 'Your selection is saved. Correct answers remain hidden until the paper is submitted.' : 'Select A–E or leave blank and continue. Blank answers count as zero.') : a.checked ? `Marked ${a.selected === q.answer ? 'correct' : 'incorrect'} · ${checked} of ${session.ids.length} questions checked.` :
       (a.selected ? `Option ${a.selected} selected. Select “Check answer & explain” to record a mark.` : 'Select A–E to answer, or navigate on without checking. Unchecked questions are not scored as correct.');
     if (rebuildJump) buildJump(); else {
       const jump = $('jumpSelect');
       jump.value = String(session.index);
       const option = jump.options[session.index];
-      if (option) option.textContent = `${session.index + 1}. Q${q.id} ${a.checked ? (a.selected === q.answer ? '✓' : '✕') : '○'}`;
+      if (option) option.textContent = `${session.index + 1}. Q${q.id} ${session.exam ? (a.selected ? '●' : '○') : a.checked ? (a.selected === q.answer ? '✓' : '✕') : '○'}`;
     }
     save();
   }
   function reveal() {
-    if (!session || checkDeadline()) return;
+    if (!session || checkDeadline() || session.exam) return;
     const q = current(), a = attempt(q.id);
     if (!a.selected || a.checked) return; // Never mark a blank answer as a graded attempt.
     a.checked = true;
@@ -312,7 +338,7 @@
     if (!session || checkDeadline()) return;
     for (let offset = 1; offset <= session.ids.length; offset++) {
       const index = (session.index + offset) % session.ids.length;
-      if (!session.answers[session.ids[index]]?.checked) { moveTo(index); return; }
+      if (session.exam ? !session.answers[session.ids[index]]?.selected : !session.answers[session.ids[index]]?.checked) { moveTo(index); return; }
     }
     $('qFeedback').textContent = 'Every question in this session is checked. Select Finish & score.';
   }
@@ -340,8 +366,16 @@
   function finish(label = 'Session complete', forced = false) {
     if (!session) return;
     const ids = [...session.ids];
-    const checked = checkedInSession();
-    if (!forced && checked < ids.length && !confirm(`${ids.length - checked} question(s) are not checked. Finish anyway? They count as zero in the session score.`)) return;
+    const checked = session.exam ? ids.filter(id => session.answers[id]?.selected).length : checkedInSession();
+    if (!forced && checked < ids.length && !confirm(`${ids.length - checked} question(s) are unanswered or unchecked. Finish anyway? They count as zero in the session score.`)) return;
+    if(session.exam){
+      for(const id of ids){
+        const a=session.answers[id];if(!a?.selected||a.checked)continue;
+        const q=byId.get(id),old=record(id),wasAnswered=isAnswered(id);
+        store.records[id]={...old,checked:true,selected:a.selected,bookmarked:Boolean(old.bookmarked),firstSelected:wasAnswered?old.firstSelected:a.selected,attempts:(wasAnswered?old.attempts||1:0)+1,correctAttempts:(wasAnswered?old.correctAttempts||0:0)+Number(a.selected===q.answer),answeredAt:new Date().toISOString()};
+        a.checked=true;
+      }
+    }
     let correct = 0;
     const wrongIds = [], unansweredIds = [];
     for (const id of ids) {
@@ -418,8 +452,17 @@
     save(); view('setupView'); $('setupInfo').textContent = 'Progress has been reset on this device.';
   }
   function bind() {
-    populate(); tally(); showStorageWarning();
+    populate(); tally(); showStorageWarning(); updateMulti();
     $('startBtn').onclick = runSetup;
+    $('examCheck').onchange=()=>{
+      const exam=$('examCheck').checked;
+      $('sizeSelect').disabled=exam;
+      $('timedCheck').disabled=exam;
+      if(exam){$('sizeSelect').value='90';$('timedCheck').checked=true;}
+      else{$('timedCheck').checked=false;}
+      updateMulti();
+    };
+    $('blockFilter').addEventListener('change',updateMulti);
     $('resumeBtn').onclick = resume;
     $('viewLastResultBtn').onclick = () => {if (store.lastResult) showResult(store.lastResult);};
     $('browseBtn').onclick = browse; $('browseBack').onclick = () => view('setupView');

@@ -1,0 +1,18 @@
+{
+  "tests": 75,
+  "passed": 75,
+  "failed": [],
+  "pdf_pages": [
+    82,
+    145,
+    121,
+    195,
+    408
+  ],
+  "sba_questions": 800,
+  "osce_stations": 58,
+  "soe_cases": 51,
+  "revision_pages": 82,
+  "fpros_reference": "https://drowenkam.github.io/DSFE-Fpros/",
+  "browser_test": "Headless Chromium blocked local navigation with ERR_BLOCKED_BY_ADMINISTRATOR; no live browser rendering claimed."
+}

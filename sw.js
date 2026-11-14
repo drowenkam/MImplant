@@ -1,107 +1,11 @@
-/* Offline-first, versioned cache. Critical study files are independent of optional large PDF downloads. */
-const CACHE = 'implant-study-v4';
-const CORE = [
-  './', './index.html', './revision.html', './quiz.html', './styles.css',
-  './app.js', './revision-app.js', './quiz-app.js',
-  './data/questions.js', './data/revision.js',
-  './manifest.webmanifest', './assets/icon.svg',
-  './assets/icon-180.png', './assets/icon-192.png', './assets/icon-512.png'
-];
-const PDFS = [
-  './pdf/01_Revision_Guide.pdf', './pdf/02_SBA_800_Questions.pdf',
-  './pdf/03_SBA_800_Answers_Explanations.pdf',
-  './pdf/04_OSCE_58_Stations.pdf', './pdf/05_SOE_51_Cases.pdf'
-];
-
-self.addEventListener('install', event => {
-  event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(CORE)).then(() => self.skipWaiting()));
-});
-self.addEventListener('activate', event => {
-  event.waitUntil(caches.keys().then(keys => Promise.all(
-    keys.filter(key => key.startsWith('implant-study-') && key !== CACHE).map(key => caches.delete(key))
-  )).then(() => self.clients.claim()));
-});
-
-let pdfJob = null;
-async function notifyClients() {
-  const cache = await caches.open(CACHE);
-  const found = await Promise.all(PDFS.map(path => cache.match(path).then(Boolean)));
-  const clients = await self.clients.matchAll({type: 'window', includeUncontrolled: true});
-  for (const client of clients) client.postMessage({type: 'PDF_CACHE_STATUS', saved: found.filter(Boolean).length, total: PDFS.length});
-}
-async function cachePdfs() {
-  if (pdfJob) return pdfJob;
-  pdfJob = (async () => {
-    const cache = await caches.open(CACHE);
-    for (const path of PDFS) {
-      try {
-        if (!await cache.match(path)) {
-          const response = await fetch(new Request(path, {cache: 'reload'}));
-          if (!response.ok || response.status !== 200) throw Error('HTTP ' + response.status);
-          await cache.put(path, response);
-        }
-      } catch (error) {
-        // iOS cache quota, connectivity or a missing file must never break the core app.
-        console.warn('Optional offline PDF not saved:', path, String(error));
-      }
-      await notifyClients();
-    }
-  })().finally(() => { pdfJob = null; });
-  return pdfJob;
-}
-self.addEventListener('message', event => {
-  if (event.data?.type === 'CACHE_PDFS') event.waitUntil(cachePdfs());
-  if (event.data?.type === 'CHECK_PDFS') event.waitUntil(notifyClients());
-});
-
-async function rangedPdf(cached, header) {
-  const match = /^bytes=(\d*)-(\d*)$/i.exec(header || '');
-  if (!match || (!match[1] && !match[2])) return cached;
-  const blob = await cached.blob();
-  const size = blob.size;
-  let start, end;
-  if (match[1]) {
-    start = Number(match[1]);
-    end = match[2] ? Number(match[2]) : size - 1;
-  } else {
-    const suffix = Number(match[2]);
-    start = Math.max(0, size - suffix); end = size - 1;
-  }
-  if (!Number.isInteger(start) || !Number.isInteger(end) || start >= size || end < start) {
-    return new Response(null, {status: 416, headers: {'Content-Range': `bytes */${size}`}});
-  }
-  end = Math.min(size - 1, end);
-  const part = blob.slice(start, end + 1, 'application/pdf');
-  return new Response(part, {status: 206, headers: {
-    'Content-Type': 'application/pdf', 'Content-Range': `bytes ${start}-${end}/${size}`,
-    'Content-Length': String(part.size), 'Accept-Ranges': 'bytes'
-  }});
-}
-self.addEventListener('fetch', event => {
-  if (event.request.method !== 'GET') return;
-  const url = new URL(event.request.url), scope = new URL(self.registration.scope);
-  if (url.origin !== scope.origin || !url.pathname.startsWith(scope.pathname)) return;
-  event.respondWith((async () => {
-    const cache = await caches.open(CACHE);
-    const cached = await cache.match(event.request, {ignoreSearch: true});
-    if (cached) {
-      if (url.pathname.toLowerCase().endsWith('.pdf') && event.request.headers.has('range')) {
-        return rangedPdf(cached, event.request.headers.get('range'));
-      }
-      return cached;
-    }
-    try {
-      const response = await fetch(event.request);
-      if (response.ok && response.status === 200) {
-        try { await cache.put(event.request, response.clone()); } catch (_) { /* storage quota */ }
-      }
-      return response;
-    } catch (error) {
-      if (event.request.mode === 'navigate') {
-        return (await cache.match('./index.html')) || new Response('Offline: this page is not available.', {status: 503});
-      }
-      return new Response('This resource is not cached. Reconnect to the internet and retry.',
-        {status: 503, headers: {'Content-Type': 'text/plain; charset=utf-8'}});
-    }
-  })());
-});
+/* Versioned offline cache. Core text/data always caches; large PDFs only on explicit request. */
+const CACHE='implant-fpros-style-v3';
+const CORE=['./','./index.html','./quiz.html','./revision.html','./styles.css','./site.css','./app.js','./portal.js','./quiz-app.js','./sw.js','./manifest.webmanifest','./assets/icon.svg','./assets/icon-180.png','./assets/icon-192.png','./assets/icon-512.png','./data/questions.js','./data/revision.js','./data/cases.js'];
+self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(CORE)).then(()=>self.skipWaiting()))});
+self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(x=>x.startsWith('implant-')&&x!==CACHE).map(x=>caches.delete(x)))).then(()=>self.clients.claim()))});
+async function rangedPdf(cached,header){const match=/^bytes=(\d*)-(\d*)$/i.exec(header||'');if(!match||(!match[1]&&!match[2]))return cached;const b=await cached.blob(),size=b.size;let a,end;
+if(match[1]){a=Number(match[1]);end=match[2]?Number(match[2]):size-1}else{a=Math.max(0,size-Number(match[2]));end=size-1}
+if(!Number.isInteger(a)||!Number.isInteger(end)||a>=size||end<a)return new Response(null,{status:416,headers:{'Content-Range':`bytes */${size}`}});end=Math.min(end,size-1);const portion=b.slice(a,end+1,'application/pdf');return new Response(portion,{status:206,headers:{'Content-Type':'application/pdf','Accept-Ranges':'bytes','Content-Range':`bytes ${a}-${end}/${size}`,'Content-Length':String(portion.size)}})}
+self.addEventListener('fetch',event=>{if(event.request.method!=='GET')return;const u=new URL(event.request.url),scope=new URL(self.registration.scope);if(u.origin!==scope.origin||!u.pathname.startsWith(scope.pathname))return;
+event.respondWith((async()=>{const c=await caches.open(CACHE);const cached=await c.match(event.request,{ignoreSearch:true});if(cached){if(u.pathname.endsWith('.pdf')&&event.request.headers.has('range'))return rangedPdf(cached,event.request.headers.get('range'));return cached}
+try{const r=await fetch(event.request);if(r.ok&&r.status===200){try{await c.put(event.request,r.clone())}catch(_){}}return r}catch(e){if(event.request.mode==='navigate')return await c.match('./index.html')||new Response('Offline page unavailable',{status:503});return new Response('Resource unavailable offline. Reconnect and retry.',{status:503,headers:{'Content-Type':'text/plain; charset=utf-8'}})}})())});
